@@ -1,75 +1,755 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enhanced Snake Game</title>
-    <style>
-        /* Add your CSS here for improved visuals */
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #fafafa;
-        }
-        canvas {
-            border: 1px solid black;
-        }
-        .hidden-gift {
-            display: none;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kids Snake Adventure - Enhanced</title>
+  <style>
+    :root {
+      --bg1: #0f1020;
+      --bg2: #1d2458;
+      --panel: rgba(255, 255, 255, 0.1);
+      --text: #f9fbff;
+      --accent: #6fffe9;
+      --pink: #ff7bd5;
+      --yellow: #ffe66d;
+      --danger: #ff5d73;
+      --ok: #7cff89;
+      --grid: rgba(255,255,255,0.08);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Nunito", "Segoe UI", system-ui, sans-serif;
+      color: var(--text);
+      background: radial-gradient(circle at top right, #313d9e 0%, transparent 25%),
+                  radial-gradient(circle at top left, #7b2cbf 0%, transparent 30%),
+                  linear-gradient(160deg, var(--bg1), var(--bg2));
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      overflow: hidden;
+    }
+
+    .sparkle {
+      position: fixed;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.5);
+      animation: float 8s linear infinite;
+      z-index: 0;
+    }
+
+    @keyframes float {
+      from { transform: translateY(105vh) scale(0.5); opacity: 0; }
+      20% { opacity: 1; }
+      to { transform: translateY(-10vh) scale(1.2); opacity: 0; }
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+
+    .app {
+      position: relative;
+      z-index: 1;
+      width: min(1050px, 98vw);
+      display: grid;
+      grid-template-columns: 310px 1fr;
+      gap: 18px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 20px;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 16px 36px rgba(0,0,0,0.35);
+    }
+
+    .sidebar { padding: 18px; display: grid; gap: 14px; align-content: start; }
+
+    h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      line-height: 1.1;
+      letter-spacing: .4px;
+    }
+
+    .subtitle { margin: 6px 0 0; font-size: .9rem; opacity: 0.9; }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .stat {
+      background: rgba(0,0,0,0.2);
+      border-radius: 14px;
+      padding: 10px;
+      text-align: center;
+    }
+
+    .stat b { font-size: 1.35rem; display: block; }
+
+    .task {
+      background: rgba(0,0,0,0.22);
+      border-radius: 14px;
+      padding: 12px;
+      font-size: .95rem;
+    }
+
+    .task strong { color: var(--yellow); }
+
+    button {
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform .15s ease, filter .15s ease;
+    }
+
+    button:hover { transform: translateY(-2px); filter: brightness(1.08); }
+
+    .primary { background: linear-gradient(130deg, var(--accent), #4cc9f0); color: #102038; }
+    .secondary { background: linear-gradient(130deg, var(--pink), #f72585); color: #fff; }
+
+    .controls { font-size: .86rem; opacity: .95; line-height: 1.45; }
+
+    .game-wrap {
+      padding: 16px;
+      display: grid;
+      gap: 12px;
+      grid-template-rows: auto auto 1fr;
+    }
+
+    .stage-progress {
+      height: 14px;
+      width: 100%;
+      background: rgba(255,255,255,.16);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .stage-progress > div {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, #ffd166, #06d6a0);
+      transition: width .25s ease;
+    }
+
+    canvas {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      max-height: 76vh;
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(4,10,35,.78), rgba(6,22,49,.92));
+      border: 1px solid rgba(255,255,255,0.13);
+      display: block;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(0,0,0,.26);
+      border: 1px solid rgba(255,255,255,.15);
+      padding: 8px 11px;
+      border-radius: 999px;
+      font-size: .85rem;
+    }
+
+    .message {
+      min-height: 1.3rem;
+      font-weight: 700;
+      color: var(--ok);
+      text-align: center;
+    }
+
+    @media (max-width: 920px) {
+      .app { grid-template-columns: 1fr; }
+      canvas { max-height: 58vh; }
+    }
+  </style>
 </head>
 <body>
-    <canvas id="gameCanvas" width="480" height="320"></canvas>
-    <div id="completionMessage"></div>
-    <div id="gifts" class="hidden-gift"></div>
-    <script>
-        // JavaScript for the game logic with enhancements
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        let snake = [ {x: 9, y: 9} ];
-        let food = {x: 5, y: 5};
-        let score = 0;
-        let stage = 1;
-        const stagesText = ["Great job! Stage 1 completed!","Nice! Stage 2 done!","Well done! Stage 3 clearance!","Good work! Stage 4 achieved!","Awesome! You completed Stage 5!","Fantastic! Stage 6 finished!","Incredible! Stage 7 done!","Outstanding! Stage 8 achieved!"];
+  <div id="sparkles"></div>
+  <main class="app">
+    <section class="sidebar card">
+      <div>
+        <h1>🐍 Kids Snake Adventure</h1>
+        <p class="subtitle">Complete missions, clear stages, find hidden gifts!</p>
+      </div>
 
-        function drawSnake() {
-            ctx.fillStyle = 'lightgreen';
-            snake.forEach(part => {
-                ctx.fillRect(part.x * 20, part.y * 20, 18, 18);
-                // Add eyes and mouth depending on snake direction
-            });
+      <div class="stat-grid">
+        <div class="stat"><small>Total Points</small><b id="points">0</b></div>
+        <div class="stat"><small>Stage</small><b id="stage">1/8</b></div>
+        <div class="stat"><small>Lives</small><b id="lives">3</b></div>
+        <div class="stat"><small>Snake Size</small><b id="size">3</b></div>
+      </div>
+
+      <div class="task">
+        <strong>🥚 Stage Mission</strong>
+        <div id="taskText">Eat 5 eggs.</div>
+        <div id="taskProgress">Progress: 0/5</div>
+        <div id="giftStatus" style="margin-top: 8px; color: var(--pink);"></div>
+      </div>
+
+      <button class="primary" id="startBtn">Start / Pause</button>
+      <button class="secondary" id="resetBtn">Reset Game</button>
+
+      <div class="controls">
+        <b>Controls:</b>
+        <div>⬆️⬇️⬅️➡️ Arrow keys or WASD</div>
+        <div>Space = Pause</div>
+      </div>
+    </section>
+
+    <section class="game-wrap card">
+      <div class="badge" id="stageName">Stage 1: Apple Garden</div>
+      <div class="stage-progress"><div id="progressBar"></div></div>
+      <canvas id="board" width="720" height="720"></canvas>
+      <div class="message" id="message"></div>
+    </section>
+  </main>
+
+  <script>
+    const canvas = document.getElementById('board');
+    const ctx = canvas.getContext('2d');
+
+    const ui = {
+      points: document.getElementById('points'),
+      stage: document.getElementById('stage'),
+      lives: document.getElementById('lives'),
+      size: document.getElementById('size'),
+      taskText: document.getElementById('taskText'),
+      taskProgress: document.getElementById('taskProgress'),
+      stageName: document.getElementById('stageName'),
+      progressBar: document.getElementById('progressBar'),
+      message: document.getElementById('message'),
+      giftStatus: document.getElementById('giftStatus'),
+    };
+
+    const GRID = 24;
+    const CELL = canvas.width / GRID;
+
+    const STAGES = [
+      { name: 'Apple Garden', target: 5, speed: 165, walls: 0, movingHazards: 0, bonus: 100, easy: true, giftType: 'box', giftBonus: 50 },
+      { name: 'Sunny Meadow', target: 7, speed: 155, walls: 3, movingHazards: 0, bonus: 140, easy: true, giftType: 'box', giftBonus: 50 },
+      { name: 'Candy Trail', target: 9, speed: 145, walls: 4, movingHazards: 1, bonus: 180, easy: true, giftType: 'gem', giftBonus: 75 },
+      { name: 'Rocket Tunnel', target: 11, speed: 135, walls: 6, movingHazards: 1, bonus: 230, giftType: 'gem', giftBonus: 75 },
+      { name: 'Jungle Dash', target: 12, speed: 122, walls: 8, movingHazards: 2, bonus: 280, giftType: 'crown', giftBonus: 100 },
+      { name: 'Crystal Canyon', target: 14, speed: 112, walls: 10, movingHazards: 2, bonus: 340, giftType: 'crown', giftBonus: 100 },
+      { name: 'Meteor Maze', target: 16, speed: 103, walls: 12, movingHazards: 3, bonus: 410, giftType: 'star', giftBonus: 150 },
+      { name: 'Galaxy Finale', target: 18, speed: 92, walls: 14, movingHazards: 4, bonus: 500, giftType: 'star', giftBonus: 150 },
+    ];
+
+    const GREETINGS = [
+      '🎉 Apple Garden Completed! You\'re a budding explorer!',
+      '🌟 Sunny Meadow mastered! The sun smiles on you!',
+      '🍬 Candy Trail conquered! Sweet victory!',
+      '🚀 Rocket Tunnel blasted through! Zoom zoom!',
+      '🌴 Jungle Dash completed! Wild and free!',
+      '💎 Crystal Canyon sparkles with your triumph!',
+      '☄️ Meteor Maze survived! You\'re a star!',
+      '🌌 Galaxy Finale reached! You\'re a LEGEND!'
+    ];
+
+    const state = {
+      snake: [],
+      direction: { x: 1, y: 0 },
+      nextDirection: { x: 1, y: 0 },
+      food: null,
+      gift: null,
+      walls: [],
+      hazards: [],
+      particles: [],
+      points: 0,
+      lives: 3,
+      stageIndex: 0,
+      collected: 0,
+      giftCollected: false,
+      running: false,
+      timer: null,
+    };
+
+    function randomCell(occupied = []) {
+      while (true) {
+        const pos = { x: Math.floor(Math.random() * GRID), y: Math.floor(Math.random() * GRID) };
+        const taken = occupied.some(p => p.x === pos.x && p.y === pos.y);
+        if (!taken) return pos;
+      }
+    }
+
+    function initSnake() {
+      state.snake = [
+        { x: 5, y: 12 },
+        { x: 4, y: 12 },
+        { x: 3, y: 12 },
+      ];
+      state.direction = { x: 1, y: 0 };
+      state.nextDirection = { x: 1, y: 0 };
+    }
+
+    function setStage(index) {
+      state.stageIndex = index;
+      state.collected = 0;
+      state.giftCollected = false;
+      state.gift = null;
+      initSnake();
+      state.walls = [];
+      state.hazards = [];
+
+      const stage = STAGES[index];
+      const occupied = [...state.snake];
+
+      for (let i = 0; i < stage.walls; i++) {
+        const wall = randomCell(occupied);
+        state.walls.push(wall);
+        occupied.push(wall);
+      }
+
+      for (let i = 0; i < stage.movingHazards; i++) {
+        const h = randomCell(occupied);
+        h.vx = Math.random() > 0.5 ? 1 : -1;
+        h.vy = Math.random() > 0.5 ? 1 : -1;
+        state.hazards.push(h);
+        occupied.push(h);
+      }
+
+      state.food = randomCell([...occupied]);
+      restartLoop();
+      updateUI();
+      flash(`Stage ${index + 1}: ${stage.name} ${stage.easy ? '(Easy)' : ''}`);
+    }
+
+    function restartLoop() {
+      clearInterval(state.timer);
+      state.timer = setInterval(gameTick, STAGES[state.stageIndex].speed);
+    }
+
+    function createGift() {
+      const stage = STAGES[state.stageIndex];
+      state.gift = randomCell([...state.snake, ...state.walls, ...state.hazards, state.food]);
+      state.gift.type = stage.giftType;
+      state.gift.bonus = stage.giftBonus;
+      state.gift.collected = false;
+      createParticles(state.gift, 'gift');
+      ui.giftStatus.textContent = `🎁 Hidden Gift Found! Find the ${stage.giftType}!`;
+    }
+
+    function createParticles(pos, type) {
+      for (let i = 0; i < 10; i++) {
+        state.particles.push({
+          x: pos.x,
+          y: pos.y,
+          vx: (Math.random() - 0.5) * 2,
+          vy: (Math.random() - 0.5) * 2,
+          life: 30,
+          type: type
+        });
+      }
+    }
+
+    function updateParticles() {
+      state.particles = state.particles.filter(p => p.life > 0);
+      state.particles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life--;
+      });
+    }
+
+    function nextStage() {
+      const stage = STAGES[state.stageIndex];
+      state.points += stage.bonus;
+      flash(GREETINGS[state.stageIndex], '#7cff89');
+
+      if (state.stageIndex === STAGES.length - 1) {
+        state.running = false;
+        clearInterval(state.timer);
+        flash(`🏆 AMAZING! You finished all stages with ${state.points} points!`, '#ffd166');
+        return;
+      }
+
+      setTimeout(() => setStage(state.stageIndex + 1), 1500);
+    }
+
+    function loseLife(reason) {
+      state.lives -= 1;
+      flash(reason);
+      if (state.lives <= 0) {
+        state.running = false;
+        clearInterval(state.timer);
+        flash(`Game Over! Final score: ${state.points}. Press Reset to try again!`, '#ff8fab');
+      } else {
+        initSnake();
+      }
+      updateUI();
+    }
+
+    function moveHazards() {
+      state.hazards.forEach(h => {
+        h.x += h.vx;
+        h.y += h.vy;
+        if (h.x < 0 || h.x >= GRID) { h.vx *= -1; h.x += h.vx * 2; }
+        if (h.y < 0 || h.y >= GRID) { h.vy *= -1; h.y += h.vy * 2; }
+      });
+    }
+
+    function gameTick() {
+      if (!state.running) return;
+
+      state.direction = { ...state.nextDirection };
+      updateParticles();
+
+      const head = {
+        x: state.snake[0].x + state.direction.x,
+        y: state.snake[0].y + state.direction.y,
+      };
+
+      if (head.x < 0 || head.y < 0 || head.x >= GRID || head.y >= GRID) {
+        loseLife('Oops! You hit the border. -1 life');
+        return;
+      }
+
+      const hitSelf = state.snake.some(seg => seg.x === head.x && seg.y === head.y);
+      if (hitSelf) {
+        loseLife('Uh-oh! You bumped into yourself. -1 life');
+        return;
+      }
+
+      const hitWall = state.walls.some(w => w.x === head.x && w.y === head.y);
+      if (hitWall) {
+        loseLife('Crash! Wall collision. -1 life');
+        return;
+      }
+
+      moveHazards();
+      const hitHazard = state.hazards.some(h => h.x === head.x && h.y === head.y);
+      if (hitHazard) {
+        loseLife('Yikes! Moving hazard hit. -1 life');
+        return;
+      }
+
+      state.snake.unshift(head);
+
+      // Check food collision
+      if (head.x === state.food.x && head.y === state.food.y) {
+        state.collected += 1;
+        state.points += 20 + state.stageIndex * 5;
+        createParticles(state.food, 'food');
+        state.food = randomCell([...state.snake, ...state.walls, ...state.hazards]);
+
+        // Create gift after all eggs collected
+        if (state.collected === STAGES[state.stageIndex].target && !state.gift) {
+          createGift();
         }
 
-        function drawFood() {
-            ctx.fillStyle = 'yellow'; // Eggs
-            ctx.fillRect(food.x * 20, food.y * 20, 18, 18);
-            // Add visual texture for eggs
+        if (state.collected >= STAGES[state.stageIndex].target && state.giftCollected) {
+          updateUI();
+          draw();
+          nextStage();
+          return;
         }
+      } else {
+        state.snake.pop();
+      }
 
-        function displayCompletionMessage() {
-            document.getElementById('completionMessage').innerText = stagesText[stage - 1];
+      // Check gift collision
+      if (state.gift && head.x === state.gift.x && head.y === state.gift.y) {
+        state.points += state.gift.bonus;
+        state.giftCollected = true;
+        createParticles(state.gift, 'gift');
+        flash(`🎁 Gift Found! +${state.gift.bonus} bonus points!`, '#ff7bd5');
+        ui.giftStatus.textContent = `✨ Gift Collected! Stage Complete!`;
+        updateUI();
+        draw();
+        setTimeout(() => nextStage(), 800);
+        return;
+      }
+
+      updateUI();
+      draw();
+    }
+
+    function drawSnakeHead(pos, direction) {
+      // Draw head base
+      ctx.fillStyle = '#00f5d4';
+      const p = 2;
+      ctx.beginPath();
+      ctx.roundRect(pos.x * CELL + p, pos.y * CELL + p, CELL - p*2, CELL - p*2, 8);
+      ctx.fill();
+
+      // Draw eyes
+      ctx.fillStyle = 'white';
+      if (direction.x === 1) { // Right
+        ctx.fillRect(pos.x * CELL + CELL - 12, pos.y * CELL + 8, 6, 4);
+        ctx.fillRect(pos.x * CELL + CELL - 12, pos.y * CELL + CELL - 12, 6, 4);
+      } else if (direction.x === -1) { // Left
+        ctx.fillRect(pos.x * CELL + 6, pos.y * CELL + 8, 6, 4);
+        ctx.fillRect(pos.x * CELL + 6, pos.y * CELL + CELL - 12, 6, 4);
+      } else if (direction.y === -1) { // Up
+        ctx.fillRect(pos.x * CELL + 8, pos.y * CELL + 6, 4, 6);
+        ctx.fillRect(pos.x * CELL + CELL - 12, pos.y * CELL + 6, 4, 6);
+      } else { // Down
+        ctx.fillRect(pos.x * CELL + 8, pos.y * CELL + CELL - 12, 4, 6);
+        ctx.fillRect(pos.x * CELL + CELL - 12, pos.y * CELL + CELL - 12, 4, 6);
+      }
+
+      // Draw pupils
+      ctx.fillStyle = 'black';
+      ctx.beginPath();
+      if (direction.x === 1) {
+        ctx.arc(pos.x * CELL + CELL - 9, pos.y * CELL + 10, 1.5, 0, Math.PI * 2);
+        ctx.arc(pos.x * CELL + CELL - 9, pos.y * CELL + CELL - 10, 1.5, 0, Math.PI * 2);
+      } else if (direction.x === -1) {
+        ctx.arc(pos.x * CELL + 9, pos.y * CELL + 10, 1.5, 0, Math.PI * 2);
+        ctx.arc(pos.x * CELL + 9, pos.y * CELL + CELL - 10, 1.5, 0, Math.PI * 2);
+      } else if (direction.y === -1) {
+        ctx.arc(pos.x * CELL + 10, pos.y * CELL + 9, 1.5, 0, Math.PI * 2);
+        ctx.arc(pos.x * CELL + CELL - 10, pos.y * CELL + 9, 1.5, 0, Math.PI * 2);
+      } else {
+        ctx.arc(pos.x * CELL + 10, pos.y * CELL + CELL - 9, 1.5, 0, Math.PI * 2);
+        ctx.arc(pos.x * CELL + CELL - 10, pos.y * CELL + CELL - 9, 1.5, 0, Math.PI * 2);
+      }
+      ctx.fill();
+
+      // Draw mouth
+      ctx.strokeStyle = '#ff7bd5';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      if (direction.x === 1) {
+        ctx.arc(pos.x * CELL + CELL - 4, pos.y * CELL + CELL / 2, 3, -Math.PI / 2, Math.PI / 2);
+      } else if (direction.x === -1) {
+        ctx.arc(pos.x * CELL + 4, pos.y * CELL + CELL / 2, 3, Math.PI / 2, -Math.PI / 2);
+      } else if (direction.y === -1) {
+        ctx.arc(pos.x * CELL + CELL / 2, pos.y * CELL + 4, 3, 0, Math.PI);
+      } else {
+        ctx.arc(pos.x * CELL + CELL / 2, pos.y * CELL + CELL - 4, 3, Math.PI, 0);
+      }
+      ctx.stroke();
+    }
+
+    function drawEgg(pos) {
+      ctx.fillStyle = '#d4a574';
+      const p = 2;
+      ctx.beginPath();
+      ctx.ellipse(pos.x * CELL + CELL / 2, pos.y * CELL + CELL / 2, (CELL - p*2) / 2, (CELL - p*2) / 2.2, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Egg texture
+      ctx.strokeStyle = 'rgba(139, 90, 43, 0.5)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.ellipse(pos.x * CELL + CELL / 2, pos.y * CELL + CELL / 2, (CELL - p*2) / 2 - 2, (CELL - p*2) / 2.2 - 2, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    function drawGift(pos, type) {
+      const p = 2;
+      const gx = pos.x * CELL + p;
+      const gy = pos.y * CELL + p;
+      const gsize = CELL - p*2;
+
+      if (type === 'box') {
+        ctx.fillStyle = '#ff7bd5';
+        ctx.fillRect(gx, gy, gsize, gsize);
+        ctx.fillStyle = '#ffd166';
+        ctx.fillRect(gx + 2, gy + 2, gsize - 4, 4);
+      } else if (type === 'gem') {
+        ctx.fillStyle = '#4cc9f0';
+        ctx.beginPath();
+        ctx.moveTo(gx + gsize / 2, gy);
+        ctx.lineTo(gx + gsize, gy + gsize / 3);
+        ctx.lineTo(gx + gsize, gy + 2 * gsize / 3);
+        ctx.lineTo(gx + gsize / 2, gy + gsize);
+        ctx.lineTo(gx, gy + 2 * gsize / 3);
+        ctx.lineTo(gx, gy + gsize / 3);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = '#00f5d4';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      } else if (type === 'crown') {
+        ctx.fillStyle = '#ffd166';
+        ctx.fillRect(gx + 2, gy + gsize - 6, gsize - 4, 4);
+        ctx.fillStyle = '#ffb700';
+        for (let i = 0; i < 3; i++) {
+          ctx.fillRect(gx + 4 + i * 5, gy + 4, 3, gsize / 2 - 2);
         }
+      } else if (type === 'star') {
+        ctx.fillStyle = '#ffe66d';
+        drawStar(gx + gsize / 2, gy + gsize / 2, 5, gsize / 2 - 2, gsize / 4);
+      }
+    }
 
-        function showGifts() {
-            // Show hidden gifts logic based on stage
-            const gifts = document.getElementById('gifts');
-            gifts.style.display = 'block';
-            // Add logic for gift types
+    function drawStar(cx, cy, spikes, outerRadius, innerRadius) {
+      let rot = Math.PI / 2 * 3;
+      let step = Math.PI / spikes;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - outerRadius);
+      for (let i = 0; i < spikes; i++) {
+        ctx.lineTo(cx + Math.cos(rot) * outerRadius, cy + Math.sin(rot) * outerRadius);
+        rot += step;
+        ctx.lineTo(cx + Math.cos(rot) * innerRadius, cy + Math.sin(rot) * innerRadius);
+        rot += step;
+      }
+      ctx.lineTo(cx, cy - outerRadius);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function drawParticles() {
+      state.particles.forEach(p => {
+        ctx.fillStyle = p.type === 'food' ? `rgba(212, 165, 116, ${p.life / 30})` : `rgba(255, 123, 213, ${p.life / 30})`;
+        ctx.fillRect(p.x * CELL + CELL / 2 - 2, p.y * CELL + CELL / 2 - 2, 4, 4);
+      });
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw grid
+      for (let y = 0; y < GRID; y++) {
+        for (let x = 0; x < GRID; x++) {
+          ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+          ctx.strokeRect(x * CELL, y * CELL, CELL, CELL);
         }
+      }
 
-        function gameLoop() {
-            // Main game loop with smooth animations
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawSnake();
-            drawFood();
-            // Handle game logic and update graphics with particle effects
-            // Include scoring for gifts
+      // Draw walls
+      state.walls.forEach(w => {
+        ctx.fillStyle = '#8d99ae';
+        const p = 2;
+        ctx.beginPath();
+        ctx.roundRect(w.x * CELL + p, w.y * CELL + p, CELL - p*2, CELL - p*2, 4);
+        ctx.fill();
+      });
+
+      // Draw hazards
+      state.hazards.forEach(h => {
+        ctx.fillStyle = '#ff5d73';
+        const p = 2;
+        ctx.beginPath();
+        ctx.roundRect(h.x * CELL + p, h.y * CELL + p, CELL - p*2, CELL - p*2, 12);
+        ctx.fill();
+      });
+
+      // Draw egg
+      drawEgg(state.food);
+
+      // Draw gift
+      if (state.gift) {
+        drawGift(state.gift, state.gift.type);
+      }
+
+      // Draw snake body
+      state.snake.forEach((seg, i) => {
+        if (i > 0) {
+          const grad = ctx.createLinearGradient(seg.x*CELL, seg.y*CELL, seg.x*CELL + CELL, seg.y*CELL + CELL);
+          grad.addColorStop(0, '#06d6a0');
+          grad.addColorStop(1, '#90e0ef');
+          ctx.fillStyle = grad;
+          const p = 2;
+          ctx.beginPath();
+          ctx.roundRect(seg.x * CELL + p, seg.y * CELL + p, CELL - p*2, CELL - p*2, 6);
+          ctx.fill();
         }
+      });
 
-        setInterval(gameLoop, 100);
-    </script>
+      // Draw snake head with eyes and mouth
+      if (state.snake.length > 0) {
+        drawSnakeHead(state.snake[0], state.direction);
+      }
+
+      // Draw particles
+      drawParticles();
+    }
+
+    function updateUI() {
+      const stage = STAGES[state.stageIndex];
+      ui.points.textContent = state.points;
+      ui.stage.textContent = `${state.stageIndex + 1}/${STAGES.length}`;
+      ui.lives.textContent = state.lives;
+      ui.size.textContent = state.snake.length;
+      ui.taskText.textContent = `Eat ${stage.target} eggs${stage.easy ? ' (Easy stage)' : ''}.`;
+      ui.taskProgress.textContent = `Progress: ${state.collected}/${stage.target}`;
+      ui.stageName.textContent = `Stage ${state.stageIndex + 1}: ${stage.name}`;
+      ui.progressBar.style.width = `${(state.collected / stage.target) * 100}%`;
+
+      if (!state.gift && state.collected >= stage.target) {
+        ui.giftStatus.textContent = '🎁 Gift is hidden on the board!';
+      } else if (state.giftCollected) {
+        ui.giftStatus.textContent = '';
+      }
+    }
+
+    function flash(msg, color = '') {
+      ui.message.textContent = msg;
+      ui.message.style.color = color || (msg.includes('Over') ? '#ff8fab' : '#7cff89');
+    }
+
+    function togglePlay() {
+      if (state.lives <= 0) return;
+      state.running = !state.running;
+      flash(state.running ? 'Let\'s go! Catch those eggs! 🥚' : 'Game paused ⏸️');
+    }
+
+    document.addEventListener('keydown', (e) => {
+      const key = e.key.toLowerCase();
+      if (key === ' ') {
+        e.preventDefault();
+        togglePlay();
+        return;
+      }
+
+      const dirs = {
+        arrowup: { x: 0, y: -1 }, w: { x: 0, y: -1 },
+        arrowdown: { x: 0, y: 1 }, s: { x: 0, y: 1 },
+        arrowleft: { x: -1, y: 0 }, a: { x: -1, y: 0 },
+        arrowright: { x: 1, y: 0 }, d: { x: 1, y: 0 },
+      };
+
+      const d = dirs[key];
+      if (!d) return;
+
+      if (d.x === -state.direction.x && d.y === -state.direction.y) return;
+      state.nextDirection = d;
+    });
+
+    document.getElementById('startBtn').addEventListener('click', togglePlay);
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      state.points = 0;
+      state.lives = 3;
+      state.running = false;
+      setStage(0);
+      flash('Game reset! Press Start to play.');
+    });
+
+    function createSparkles() {
+      const wrap = document.getElementById('sparkles');
+      for (let i = 0; i < 30; i++) {
+        const s = document.createElement('div');
+        s.className = 'sparkle';
+        s.style.left = `${Math.random() * 100}vw`;
+        s.style.animationDelay = `${Math.random() * 8}s`;
+        s.style.opacity = `${Math.random() * 0.5 + 0.2}`;
+        s.style.transform = `scale(${Math.random() * 1.3})`;
+        wrap.appendChild(s);
+      }
+    }
+
+    createSparkles();
+    setStage(0);
+    draw();
+    flash('Welcome! Eat eggs to find hidden gifts!');
+  </script>
 </body>
 </html>
