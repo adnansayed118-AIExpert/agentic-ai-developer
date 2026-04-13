@@ -1,546 +1,509 @@
-{
- "cells": [
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {
-    "vscode": {
-     "languageId": "plaintext"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kids Snake Adventure</title>
+  <style>
+    :root {
+      --bg1: #0f1020;
+      --bg2: #1d2458;
+      --panel: rgba(255, 255, 255, 0.1);
+      --text: #f9fbff;
+      --accent: #6fffe9;
+      --pink: #ff7bd5;
+      --yellow: #ffe66d;
+      --danger: #ff5d73;
+      --ok: #7cff89;
+      --grid: rgba(255,255,255,0.08);
     }
-   },
-   "outputs": [],
-   "source": [
-    "<!DOCTYPE html>\n",
-    "<html lang=\"en\">\n",
-    "<head>\n",
-    "  <meta charset=\"UTF-8\" />\n",
-    "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n",
-    "  <title>Kids Snake Adventure</title>\n",
-    "  <style>\n",
-    "    :root {\n",
-    "      --bg1: #0f1020;\n",
-    "      --bg2: #1d2458;\n",
-    "      --panel: rgba(255, 255, 255, 0.1);\n",
-    "      --text: #f9fbff;\n",
-    "      --accent: #6fffe9;\n",
-    "      --pink: #ff7bd5;\n",
-    "      --yellow: #ffe66d;\n",
-    "      --danger: #ff5d73;\n",
-    "      --ok: #7cff89;\n",
-    "      --grid: rgba(255,255,255,0.08);\n",
-    "    }\n",
-    "\n",
-    "    * { box-sizing: border-box; }\n",
-    "    body {\n",
-    "      margin: 0;\n",
-    "      min-height: 100vh;\n",
-    "      font-family: \"Nunito\", \"Segoe UI\", system-ui, sans-serif;\n",
-    "      color: var(--text);\n",
-    "      background: radial-gradient(circle at top right, #313d9e 0%, transparent 25%),\n",
-    "                  radial-gradient(circle at top left, #7b2cbf 0%, transparent 30%),\n",
-    "                  linear-gradient(160deg, var(--bg1), var(--bg2));\n",
-    "      display: grid;\n",
-    "      place-items: center;\n",
-    "      padding: 20px;\n",
-    "      overflow: hidden;\n",
-    "    }\n",
-    "\n",
-    "    .sparkle {\n",
-    "      position: fixed;\n",
-    "      width: 10px;\n",
-    "      height: 10px;\n",
-    "      border-radius: 50%;\n",
-    "      background: rgba(255,255,255,0.5);\n",
-    "      animation: float 8s linear infinite;\n",
-    "      z-index: 0;\n",
-    "    }\n",
-    "\n",
-    "    @keyframes float {\n",
-    "      from { transform: translateY(105vh) scale(0.5); opacity: 0; }\n",
-    "      20% { opacity: 1; }\n",
-    "      to { transform: translateY(-10vh) scale(1.2); opacity: 0; }\n",
-    "    }\n",
-    "\n",
-    "    .app {\n",
-    "      position: relative;\n",
-    "      z-index: 1;\n",
-    "      width: min(1050px, 98vw);\n",
-    "      display: grid;\n",
-    "      grid-template-columns: 310px 1fr;\n",
-    "      gap: 18px;\n",
-    "    }\n",
-    "\n",
-    "    .card {\n",
-    "      background: var(--panel);\n",
-    "      border: 1px solid rgba(255, 255, 255, 0.15);\n",
-    "      border-radius: 20px;\n",
-    "      backdrop-filter: blur(16px);\n",
-    "      box-shadow: 0 16px 36px rgba(0,0,0,0.35);\n",
-    "    }\n",
-    "\n",
-    "    .sidebar { padding: 18px; display: grid; gap: 14px; align-content: start; }\n",
-    "\n",
-    "    h1 {\n",
-    "      margin: 0;\n",
-    "      font-size: 1.5rem;\n",
-    "      line-height: 1.1;\n",
-    "      letter-spacing: .4px;\n",
-    "    }\n",
-    "\n",
-    "    .subtitle { margin: 6px 0 0; font-size: .9rem; opacity: 0.9; }\n",
-    "\n",
-    "    .stat-grid {\n",
-    "      display: grid;\n",
-    "      grid-template-columns: 1fr 1fr;\n",
-    "      gap: 10px;\n",
-    "    }\n",
-    "\n",
-    "    .stat {\n",
-    "      background: rgba(0,0,0,0.2);\n",
-    "      border-radius: 14px;\n",
-    "      padding: 10px;\n",
-    "      text-align: center;\n",
-    "    }\n",
-    "\n",
-    "    .stat b { font-size: 1.35rem; display: block; }\n",
-    "\n",
-    "    .task {\n",
-    "      background: rgba(0,0,0,0.22);\n",
-    "      border-radius: 14px;\n",
-    "      padding: 12px;\n",
-    "      font-size: .95rem;\n",
-    "    }\n",
-    "\n",
-    "    .task strong { color: var(--yellow); }\n",
-    "\n",
-    "    button {\n",
-    "      border: 0;\n",
-    "      border-radius: 12px;\n",
-    "      padding: 12px 14px;\n",
-    "      font-weight: 700;\n",
-    "      cursor: pointer;\n",
-    "      transition: transform .15s ease, filter .15s ease;\n",
-    "    }\n",
-    "\n",
-    "    button:hover { transform: translateY(-2px); filter: brightness(1.08); }\n",
-    "\n",
-    "    .primary { background: linear-gradient(130deg, var(--accent), #4cc9f0); color: #102038; }\n",
-    "    .secondary { background: linear-gradient(130deg, var(--pink), #f72585); color: #fff; }\n",
-    "\n",
-    "    .controls { font-size: .86rem; opacity: .95; line-height: 1.45; }\n",
-    "\n",
-    "    .game-wrap {\n",
-    "      padding: 16px;\n",
-    "      display: grid;\n",
-    "      gap: 12px;\n",
-    "      grid-template-rows: auto auto 1fr;\n",
-    "    }\n",
-    "\n",
-    "    .stage-progress {\n",
-    "      height: 14px;\n",
-    "      width: 100%;\n",
-    "      background: rgba(255,255,255,.16);\n",
-    "      border-radius: 999px;\n",
-    "      overflow: hidden;\n",
-    "    }\n",
-    "\n",
-    "    .stage-progress > div {\n",
-    "      height: 100%;\n",
-    "      width: 0;\n",
-    "      background: linear-gradient(90deg, #ffd166, #06d6a0);\n",
-    "      transition: width .25s ease;\n",
-    "    }\n",
-    "\n",
-    "    canvas {\n",
-    "      width: 100%;\n",
-    "      aspect-ratio: 1 / 1;\n",
-    "      max-height: 76vh;\n",
-    "      border-radius: 18px;\n",
-    "      background: linear-gradient(180deg, rgba(4,10,35,.78), rgba(6,22,49,.92));\n",
-    "      border: 1px solid rgba(255,255,255,0.13);\n",
-    "      display: block;\n",
-    "    }\n",
-    "\n",
-    "    .badge {\n",
-    "      display: inline-flex;\n",
-    "      align-items: center;\n",
-    "      gap: 8px;\n",
-    "      background: rgba(0,0,0,.26);\n",
-    "      border: 1px solid rgba(255,255,255,.15);\n",
-    "      padding: 8px 11px;\n",
-    "      border-radius: 999px;\n",
-    "      font-size: .85rem;\n",
-    "    }\n",
-    "\n",
-    "    .message {\n",
-    "      min-height: 1.3rem;\n",
-    "      font-weight: 700;\n",
-    "      color: var(--ok);\n",
-    "    }\n",
-    "\n",
-    "    @media (max-width: 920px) {\n",
-    "      .app { grid-template-columns: 1fr; }\n",
-    "      canvas { max-height: 58vh; }\n",
-    "    }\n",
-    "  </style>\n",
-    "</head>\n",
-    "<body>\n",
-    "  <div id=\"sparkles\"></div>\n",
-    "  <main class=\"app\">\n",
-    "    <section class=\"sidebar card\">\n",
-    "      <div>\n",
-    "        <h1>🐍 Kids Snake Adventure</h1>\n",
-    "        <p class=\"subtitle\">Complete missions, clear stages, and become a Snake Star!</p>\n",
-    "      </div>\n",
-    "\n",
-    "      <div class=\"stat-grid\">\n",
-    "        <div class=\"stat\"><small>Total Points</small><b id=\"points\">0</b></div>\n",
-    "        <div class=\"stat\"><small>Stage</small><b id=\"stage\">1/8</b></div>\n",
-    "        <div class=\"stat\"><small>Lives</small><b id=\"lives\">3</b></div>\n",
-    "        <div class=\"stat\"><small>Snake Size</small><b id=\"size\">3</b></div>\n",
-    "      </div>\n",
-    "\n",
-    "      <div class=\"task\">\n",
-    "        <strong>Stage Mission</strong>\n",
-    "        <div id=\"taskText\">Eat 5 apples.</div>\n",
-    "        <div id=\"taskProgress\">Progress: 0/5</div>\n",
-    "      </div>\n",
-    "\n",
-    "      <button class=\"primary\" id=\"startBtn\">Start / Pause</button>\n",
-    "      <button class=\"secondary\" id=\"resetBtn\">Reset Game</button>\n",
-    "\n",
-    "      <div class=\"controls\">\n",
-    "        <b>Controls:</b>\n",
-    "        <div>⬆️⬇️⬅️➡️ Arrow keys or WASD</div>\n",
-    "        <div>Space = Pause</div>\n",
-    "      </div>\n",
-    "    </section>\n",
-    "\n",
-    "    <section class=\"game-wrap card\">\n",
-    "      <div class=\"badge\" id=\"stageName\">Stage 1: Apple Garden</div>\n",
-    "      <div class=\"stage-progress\"><div id=\"progressBar\"></div></div>\n",
-    "      <canvas id=\"board\" width=\"720\" height=\"720\"></canvas>\n",
-    "      <div class=\"message\" id=\"message\"></div>\n",
-    "    </section>\n",
-    "  </main>\n",
-    "\n",
-    "  <script>\n",
-    "    const canvas = document.getElementById('board');\n",
-    "    const ctx = canvas.getContext('2d');\n",
-    "\n",
-    "    const ui = {\n",
-    "      points: document.getElementById('points'),\n",
-    "      stage: document.getElementById('stage'),\n",
-    "      lives: document.getElementById('lives'),\n",
-    "      size: document.getElementById('size'),\n",
-    "      taskText: document.getElementById('taskText'),\n",
-    "      taskProgress: document.getElementById('taskProgress'),\n",
-    "      stageName: document.getElementById('stageName'),\n",
-    "      progressBar: document.getElementById('progressBar'),\n",
-    "      message: document.getElementById('message'),\n",
-    "    };\n",
-    "\n",
-    "    const GRID = 24;\n",
-    "    const CELL = canvas.width / GRID;\n",
-    "\n",
-    "    const STAGES = [\n",
-    "      { name: 'Apple Garden', target: 5, speed: 165, walls: 0, movingHazards: 0, bonus: 100, easy: true },\n",
-    "      { name: 'Sunny Meadow', target: 7, speed: 155, walls: 3, movingHazards: 0, bonus: 140, easy: true },\n",
-    "      { name: 'Candy Trail', target: 9, speed: 145, walls: 4, movingHazards: 1, bonus: 180, easy: true },\n",
-    "      { name: 'Rocket Tunnel', target: 11, speed: 135, walls: 6, movingHazards: 1, bonus: 230 },\n",
-    "      { name: 'Jungle Dash', target: 12, speed: 122, walls: 8, movingHazards: 2, bonus: 280 },\n",
-    "      { name: 'Crystal Canyon', target: 14, speed: 112, walls: 10, movingHazards: 2, bonus: 340 },\n",
-    "      { name: 'Meteor Maze', target: 16, speed: 103, walls: 12, movingHazards: 3, bonus: 410 },\n",
-    "      { name: 'Galaxy Finale', target: 18, speed: 92, walls: 14, movingHazards: 4, bonus: 500 },\n",
-    "    ];\n",
-    "\n",
-    "    const state = {\n",
-    "      snake: [],\n",
-    "      direction: { x: 1, y: 0 },\n",
-    "      nextDirection: { x: 1, y: 0 },\n",
-    "      food: null,\n",
-    "      walls: [],\n",
-    "      hazards: [],\n",
-    "      points: 0,\n",
-    "      lives: 3,\n",
-    "      stageIndex: 0,\n",
-    "      collected: 0,\n",
-    "      running: false,\n",
-    "      timer: null,\n",
-    "    };\n",
-    "\n",
-    "    function randomCell(occupied = []) {\n",
-    "      while (true) {\n",
-    "        const pos = { x: Math.floor(Math.random() * GRID), y: Math.floor(Math.random() * GRID) };\n",
-    "        const taken = occupied.some(p => p.x === pos.x && p.y === pos.y);\n",
-    "        if (!taken) return pos;\n",
-    "      }\n",
-    "    }\n",
-    "\n",
-    "    function initSnake() {\n",
-    "      state.snake = [\n",
-    "        { x: 5, y: 12 },\n",
-    "        { x: 4, y: 12 },\n",
-    "        { x: 3, y: 12 },\n",
-    "      ];\n",
-    "      state.direction = { x: 1, y: 0 };\n",
-    "      state.nextDirection = { x: 1, y: 0 };\n",
-    "    }\n",
-    "\n",
-    "    function setStage(index) {\n",
-    "      state.stageIndex = index;\n",
-    "      state.collected = 0;\n",
-    "      initSnake();\n",
-    "      state.walls = [];\n",
-    "      state.hazards = [];\n",
-    "\n",
-    "      const stage = STAGES[index];\n",
-    "      const occupied = [...state.snake];\n",
-    "\n",
-    "      for (let i = 0; i < stage.walls; i++) {\n",
-    "        const wall = randomCell(occupied);\n",
-    "        state.walls.push(wall);\n",
-    "        occupied.push(wall);\n",
-    "      }\n",
-    "\n",
-    "      for (let i = 0; i < stage.movingHazards; i++) {\n",
-    "        const h = randomCell(occupied);\n",
-    "        h.vx = Math.random() > 0.5 ? 1 : -1;\n",
-    "        h.vy = Math.random() > 0.5 ? 1 : -1;\n",
-    "        state.hazards.push(h);\n",
-    "        occupied.push(h);\n",
-    "      }\n",
-    "\n",
-    "      state.food = randomCell([...occupied]);\n",
-    "      restartLoop();\n",
-    "      updateUI();\n",
-    "      flash(`Stage ${index + 1}: ${stage.name} ${stage.easy ? '(Easy)' : ''}`);\n",
-    "    }\n",
-    "\n",
-    "    function restartLoop() {\n",
-    "      clearInterval(state.timer);\n",
-    "      state.timer = setInterval(gameTick, STAGES[state.stageIndex].speed);\n",
-    "    }\n",
-    "\n",
-    "    function nextStage() {\n",
-    "      const stage = STAGES[state.stageIndex];\n",
-    "      state.points += stage.bonus;\n",
-    "      flash(`🎉 Stage Cleared! +${stage.bonus} bonus points`);\n",
-    "\n",
-    "      if (state.stageIndex === STAGES.length - 1) {\n",
-    "        state.running = false;\n",
-    "        clearInterval(state.timer);\n",
-    "        flash(`🏆 Amazing! You finished all stages with ${state.points} points!`);\n",
-    "        return;\n",
-    "      }\n",
-    "\n",
-    "      setTimeout(() => setStage(state.stageIndex + 1), 900);\n",
-    "    }\n",
-    "\n",
-    "    function loseLife(reason) {\n",
-    "      state.lives -= 1;\n",
-    "      flash(reason);\n",
-    "      if (state.lives <= 0) {\n",
-    "        state.running = false;\n",
-    "        clearInterval(state.timer);\n",
-    "        flash(`Game Over! Final score: ${state.points}. Press Reset to try again!`);\n",
-    "      } else {\n",
-    "        initSnake();\n",
-    "      }\n",
-    "      updateUI();\n",
-    "    }\n",
-    "\n",
-    "    function moveHazards() {\n",
-    "      state.hazards.forEach(h => {\n",
-    "        h.x += h.vx;\n",
-    "        h.y += h.vy;\n",
-    "        if (h.x < 0 || h.x >= GRID) { h.vx *= -1; h.x += h.vx * 2; }\n",
-    "        if (h.y < 0 || h.y >= GRID) { h.vy *= -1; h.y += h.vy * 2; }\n",
-    "      });\n",
-    "    }\n",
-    "\n",
-    "    function gameTick() {\n",
-    "      if (!state.running) return;\n",
-    "\n",
-    "      state.direction = { ...state.nextDirection };\n",
-    "\n",
-    "      const head = {\n",
-    "        x: state.snake[0].x + state.direction.x,\n",
-    "        y: state.snake[0].y + state.direction.y,\n",
-    "      };\n",
-    "\n",
-    "      if (head.x < 0 || head.y < 0 || head.x >= GRID || head.y >= GRID) {\n",
-    "        loseLife('Oops! You hit the border. -1 life');\n",
-    "        return;\n",
-    "      }\n",
-    "\n",
-    "      const hitSelf = state.snake.some(seg => seg.x === head.x && seg.y === head.y);\n",
-    "      if (hitSelf) {\n",
-    "        loseLife('Uh-oh! You bumped into yourself. -1 life');\n",
-    "        return;\n",
-    "      }\n",
-    "\n",
-    "      const hitWall = state.walls.some(w => w.x === head.x && w.y === head.y);\n",
-    "      if (hitWall) {\n",
-    "        loseLife('Crash! Wall collision. -1 life');\n",
-    "        return;\n",
-    "      }\n",
-    "\n",
-    "      moveHazards();\n",
-    "      const hitHazard = state.hazards.some(h => h.x === head.x && h.y === head.y);\n",
-    "      if (hitHazard) {\n",
-    "        loseLife('Yikes! Moving hazard hit. -1 life');\n",
-    "        return;\n",
-    "      }\n",
-    "\n",
-    "      state.snake.unshift(head);\n",
-    "\n",
-    "      if (head.x === state.food.x && head.y === state.food.y) {\n",
-    "        state.collected += 1;\n",
-    "        state.points += 20 + state.stageIndex * 5;\n",
-    "        state.food = randomCell([...state.snake, ...state.walls, ...state.hazards]);\n",
-    "\n",
-    "        if (state.collected >= STAGES[state.stageIndex].target) {\n",
-    "          updateUI();\n",
-    "          draw();\n",
-    "          nextStage();\n",
-    "          return;\n",
-    "        }\n",
-    "      } else {\n",
-    "        state.snake.pop();\n",
-    "      }\n",
-    "\n",
-    "      updateUI();\n",
-    "      draw();\n",
-    "    }\n",
-    "\n",
-    "    function drawCell(pos, color, radius = 6) {\n",
-    "      ctx.fillStyle = color;\n",
-    "      const p = 2;\n",
-    "      ctx.beginPath();\n",
-    "      ctx.roundRect(pos.x * CELL + p, pos.y * CELL + p, CELL - p*2, CELL - p*2, radius);\n",
-    "      ctx.fill();\n",
-    "    }\n",
-    "\n",
-    "    function draw() {\n",
-    "      ctx.clearRect(0, 0, canvas.width, canvas.height);\n",
-    "\n",
-    "      for (let y = 0; y < GRID; y++) {\n",
-    "        for (let x = 0; x < GRID; x++) {\n",
-    "          ctx.strokeStyle = 'rgba(255,255,255,0.08)';\n",
-    "          ctx.strokeRect(x * CELL, y * CELL, CELL, CELL);\n",
-    "        }\n",
-    "      }\n",
-    "\n",
-    "      drawCell(state.food, '#ffe66d', 12);\n",
-    "\n",
-    "      state.walls.forEach(w => drawCell(w, '#8d99ae', 4));\n",
-    "      state.hazards.forEach(h => drawCell(h, '#ff5d73', 12));\n",
-    "\n",
-    "      state.snake.forEach((seg, i) => {\n",
-    "        const grad = ctx.createLinearGradient(seg.x*CELL, seg.y*CELL, seg.x*CELL + CELL, seg.y*CELL + CELL);\n",
-    "        grad.addColorStop(0, i === 0 ? '#00f5d4' : '#06d6a0');\n",
-    "        grad.addColorStop(1, i === 0 ? '#48cae4' : '#90e0ef');\n",
-    "        drawCell(seg, grad, i === 0 ? 10 : 6);\n",
-    "      });\n",
-    "    }\n",
-    "\n",
-    "    function updateUI() {\n",
-    "      const stage = STAGES[state.stageIndex];\n",
-    "      ui.points.textContent = state.points;\n",
-    "      ui.stage.textContent = `${state.stageIndex + 1}/${STAGES.length}`;\n",
-    "      ui.lives.textContent = state.lives;\n",
-    "      ui.size.textContent = state.snake.length;\n",
-    "      ui.taskText.textContent = `Eat ${stage.target} apples${stage.easy ? ' (Easy stage)' : ''}.`;\n",
-    "      ui.taskProgress.textContent = `Progress: ${state.collected}/${stage.target}`;\n",
-    "      ui.stageName.textContent = `Stage ${state.stageIndex + 1}: ${stage.name}`;\n",
-    "      ui.progressBar.style.width = `${(state.collected / stage.target) * 100}%`;\n",
-    "    }\n",
-    "\n",
-    "    function flash(msg, color = '') {\n",
-    "      ui.message.textContent = msg;\n",
-    "      ui.message.style.color = color || (msg.includes('Over') ? '#ff8fab' : '#7cff89');\n",
-    "    }\n",
-    "\n",
-    "    function togglePlay() {\n",
-    "      if (state.lives <= 0) return;\n",
-    "      state.running = !state.running;\n",
-    "      flash(state.running ? 'Let\\'s go! Catch those apples! 🍎' : 'Game paused ⏸️');\n",
-    "    }\n",
-    "\n",
-    "    document.addEventListener('keydown', (e) => {\n",
-    "      const key = e.key.toLowerCase();\n",
-    "      if (key === ' ') {\n",
-    "        e.preventDefault();\n",
-    "        togglePlay();\n",
-    "        return;\n",
-    "      }\n",
-    "\n",
-    "      const dirs = {\n",
-    "        arrowup: { x: 0, y: -1 }, w: { x: 0, y: -1 },\n",
-    "        arrowdown: { x: 0, y: 1 }, s: { x: 0, y: 1 },\n",
-    "        arrowleft: { x: -1, y: 0 }, a: { x: -1, y: 0 },\n",
-    "        arrowright: { x: 1, y: 0 }, d: { x: 1, y: 0 },\n",
-    "      };\n",
-    "\n",
-    "      const d = dirs[key];\n",
-    "      if (!d) return;\n",
-    "\n",
-    "      if (d.x === -state.direction.x && d.y === -state.direction.y) return;\n",
-    "      state.nextDirection = d;\n",
-    "    });\n",
-    "\n",
-    "    document.getElementById('startBtn').addEventListener('click', togglePlay);\n",
-    "    document.getElementById('resetBtn').addEventListener('click', () => {\n",
-    "      state.points = 0;\n",
-    "      state.lives = 3;\n",
-    "      state.running = false;\n",
-    "      setStage(0);\n",
-    "      flash('Game reset! Press Start to play.');\n",
-    "    });\n",
-    "\n",
-    "    function createSparkles() {\n",
-    "      const wrap = document.getElementById('sparkles');\n",
-    "      for (let i = 0; i < 30; i++) {\n",
-    "        const s = document.createElement('div');\n",
-    "        s.className = 'sparkle';\n",
-    "        s.style.left = `${Math.random() * 100}vw`;\n",
-    "        s.style.animationDelay = `${Math.random() * 8}s`;\n",
-    "        s.style.opacity = `${Math.random() * 0.5 + 0.2}`;\n",
-    "        s.style.transform = `scale(${Math.random() * 1.3})`;\n",
-    "        wrap.appendChild(s);\n",
-    "      }\n",
-    "    }\n",
-    "\n",
-    "    createSparkles();\n",
-    "    setStage(0);\n",
-    "    draw();\n",
-    "    flash('Welcome! First 3 stages are easy. Press Start to begin!');\n",
-    "  </script>\n",
-    "</body>\n",
-    "</html>\n"
-   ]
-  }
- ],
- "metadata": {
-  "kernelspec": {
-   "display_name": "Python 3 (ipykernel)",
-   "language": "python",
-   "name": "python3"
-  },
-  "language_info": {
-   "codemirror_mode": {
-    "name": "ipython",
-    "version": 3
-   },
-   "file_extension": ".py",
-   "mimetype": "text/x-python",
-   "name": "python",
-   "nbconvert_exporter": "python",
-   "pygments_lexer": "ipython3",
-   "version": "3.9.7"
-  }
- },
- "nbformat": 4,
- "nbformat_minor": 5
-}
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Nunito", "Segoe UI", system-ui, sans-serif;
+      color: var(--text);
+      background: radial-gradient(circle at top right, #313d9e 0%, transparent 25%),
+                  radial-gradient(circle at top left, #7b2cbf 0%, transparent 30%),
+                  linear-gradient(160deg, var(--bg1), var(--bg2));
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      overflow: hidden;
+    }
+
+    .sparkle {
+      position: fixed;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.5);
+      animation: float 8s linear infinite;
+      z-index: 0;
+    }
+
+    @keyframes float {
+      from { transform: translateY(105vh) scale(0.5); opacity: 0; }
+      20% { opacity: 1; }
+      to { transform: translateY(-10vh) scale(1.2); opacity: 0; }
+    }
+
+    .app {
+      position: relative;
+      z-index: 1;
+      width: min(1050px, 98vw);
+      display: grid;
+      grid-template-columns: 310px 1fr;
+      gap: 18px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 20px;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 16px 36px rgba(0,0,0,0.35);
+    }
+
+    .sidebar { padding: 18px; display: grid; gap: 14px; align-content: start; }
+
+    h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      line-height: 1.1;
+      letter-spacing: .4px;
+    }
+
+    .subtitle { margin: 6px 0 0; font-size: .9rem; opacity: 0.9; }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .stat {
+      background: rgba(0,0,0,0.2);
+      border-radius: 14px;
+      padding: 10px;
+      text-align: center;
+    }
+
+    .stat b { font-size: 1.35rem; display: block; }
+
+    .task {
+      background: rgba(0,0,0,0.22);
+      border-radius: 14px;
+      padding: 12px;
+      font-size: .95rem;
+    }
+
+    .task strong { color: var(--yellow); }
+
+    button {
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform .15s ease, filter .15s ease;
+    }
+
+    button:hover { transform: translateY(-2px); filter: brightness(1.08); }
+
+    .primary { background: linear-gradient(130deg, var(--accent), #4cc9f0); color: #102038; }
+    .secondary { background: linear-gradient(130deg, var(--pink), #f72585); color: #fff; }
+
+    .controls { font-size: .86rem; opacity: .95; line-height: 1.45; }
+
+    .game-wrap {
+      padding: 16px;
+      display: grid;
+      gap: 12px;
+      grid-template-rows: auto auto 1fr;
+    }
+
+    .stage-progress {
+      height: 14px;
+      width: 100%;
+      background: rgba(255,255,255,.16);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .stage-progress > div {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, #ffd166, #06d6a0);
+      transition: width .25s ease;
+    }
+
+    canvas {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      max-height: 76vh;
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(4,10,35,.78), rgba(6,22,49,.92));
+      border: 1px solid rgba(255,255,255,0.13);
+      display: block;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(0,0,0,.26);
+      border: 1px solid rgba(255,255,255,.15);
+      padding: 8px 11px;
+      border-radius: 999px;
+      font-size: .85rem;
+    }
+
+    .message {
+      min-height: 1.3rem;
+      font-weight: 700;
+      color: var(--ok);
+    }
+
+    @media (max-width: 920px) {
+      .app { grid-template-columns: 1fr; }
+      canvas { max-height: 58vh; }
+    }
+  </style>
+</head>
+<body>
+  <div id="sparkles"></div>
+  <main class="app">
+    <section class="sidebar card">
+      <div>
+        <h1>🐍 Kids Snake Adventure</h1>
+        <p class="subtitle">Complete missions, clear stages, and become a Snake Star!</p>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat"><small>Total Points</small><b id="points">0</b></div>
+        <div class="stat"><small>Stage</small><b id="stage">1/8</b></div>
+        <div class="stat"><small>Lives</small><b id="lives">3</b></div>
+        <div class="stat"><small>Snake Size</small><b id="size">3</b></div>
+      </div>
+
+      <div class="task">
+        <strong>Stage Mission</strong>
+        <div id="taskText">Eat 5 apples.</div>
+        <div id="taskProgress">Progress: 0/5</div>
+      </div>
+
+      <button class="primary" id="startBtn">Start / Pause</button>
+      <button class="secondary" id="resetBtn">Reset Game</button>
+
+      <div class="controls">
+        <b>Controls:</b>
+        <div>⬆️⬇️⬅️➡️ Arrow keys or WASD</div>
+        <div>Space = Pause</div>
+      </div>
+    </section>
+
+    <section class="game-wrap card">
+      <div class="badge" id="stageName">Stage 1: Apple Garden</div>
+      <div class="stage-progress"><div id="progressBar"></div></div>
+      <canvas id="board" width="720" height="720"></canvas>
+      <div class="message" id="message"></div>
+    </section>
+  </main>
+
+  <script>
+    const canvas = document.getElementById('board');
+    const ctx = canvas.getContext('2d');
+
+    const ui = {
+      points: document.getElementById('points'),
+      stage: document.getElementById('stage'),
+      lives: document.getElementById('lives'),
+      size: document.getElementById('size'),
+      taskText: document.getElementById('taskText'),
+      taskProgress: document.getElementById('taskProgress'),
+      stageName: document.getElementById('stageName'),
+      progressBar: document.getElementById('progressBar'),
+      message: document.getElementById('message'),
+    };
+
+    const GRID = 24;
+    const CELL = canvas.width / GRID;
+
+    const STAGES = [
+      { name: 'Apple Garden', target: 5, speed: 165, walls: 0, movingHazards: 0, bonus: 100, easy: true },
+      { name: 'Sunny Meadow', target: 7, speed: 155, walls: 3, movingHazards: 0, bonus: 140, easy: true },
+      { name: 'Candy Trail', target: 9, speed: 145, walls: 4, movingHazards: 1, bonus: 180, easy: true },
+      { name: 'Rocket Tunnel', target: 11, speed: 135, walls: 6, movingHazards: 1, bonus: 230 },
+      { name: 'Jungle Dash', target: 12, speed: 122, walls: 8, movingHazards: 2, bonus: 280 },
+      { name: 'Crystal Canyon', target: 14, speed: 112, walls: 10, movingHazards: 2, bonus: 340 },
+      { name: 'Meteor Maze', target: 16, speed: 103, walls: 12, movingHazards: 3, bonus: 410 },
+      { name: 'Galaxy Finale', target: 18, speed: 92, walls: 14, movingHazards: 4, bonus: 500 },
+    ];
+
+    const state = {
+      snake: [],
+      direction: { x: 1, y: 0 },
+      nextDirection: { x: 1, y: 0 },
+      food: null,
+      walls: [],
+      hazards: [],
+      points: 0,
+      lives: 3,
+      stageIndex: 0,
+      collected: 0,
+      running: false,
+      timer: null,
+    };
+
+    function randomCell(occupied = []) {
+      while (true) {
+        const pos = { x: Math.floor(Math.random() * GRID), y: Math.floor(Math.random() * GRID) };
+        const taken = occupied.some(p => p.x === pos.x && p.y === pos.y);
+        if (!taken) return pos;
+      }
+    }
+
+    function initSnake() {
+      state.snake = [
+        { x: 5, y: 12 },
+        { x: 4, y: 12 },
+        { x: 3, y: 12 },
+      ];
+      state.direction = { x: 1, y: 0 };
+      state.nextDirection = { x: 1, y: 0 };
+    }
+
+    function setStage(index) {
+      state.stageIndex = index;
+      state.collected = 0;
+      initSnake();
+      state.walls = [];
+      state.hazards = [];
+
+      const stage = STAGES[index];
+      const occupied = [...state.snake];
+
+      for (let i = 0; i < stage.walls; i++) {
+        const wall = randomCell(occupied);
+        state.walls.push(wall);
+        occupied.push(wall);
+      }
+
+      for (let i = 0; i < stage.movingHazards; i++) {
+        const h = randomCell(occupied);
+        h.vx = Math.random() > 0.5 ? 1 : -1;
+        h.vy = Math.random() > 0.5 ? 1 : -1;
+        state.hazards.push(h);
+        occupied.push(h);
+      }
+
+      state.food = randomCell([...occupied]);
+      restartLoop();
+      updateUI();
+      flash(`Stage ${index + 1}: ${stage.name} ${stage.easy ? '(Easy)' : ''}`);
+    }
+
+    function restartLoop() {
+      clearInterval(state.timer);
+      state.timer = setInterval(gameTick, STAGES[state.stageIndex].speed);
+    }
+
+    function nextStage() {
+      const stage = STAGES[state.stageIndex];
+      state.points += stage.bonus;
+      flash(`🎉 Stage Cleared! +${stage.bonus} bonus points`);
+
+      if (state.stageIndex === STAGES.length - 1) {
+        state.running = false;
+        clearInterval(state.timer);
+        flash(`🏆 Amazing! You finished all stages with ${state.points} points!`);
+        return;
+      }
+
+      setTimeout(() => setStage(state.stageIndex + 1), 900);
+    }
+
+    function loseLife(reason) {
+      state.lives -= 1;
+      flash(reason);
+      if (state.lives <= 0) {
+        state.running = false;
+        clearInterval(state.timer);
+        flash(`Game Over! Final score: ${state.points}. Press Reset to try again!`);
+      } else {
+        initSnake();
+      }
+      updateUI();
+    }
+
+    function moveHazards() {
+      state.hazards.forEach(h => {
+        h.x += h.vx;
+        h.y += h.vy;
+        if (h.x < 0 || h.x >= GRID) { h.vx *= -1; h.x += h.vx * 2; }
+        if (h.y < 0 || h.y >= GRID) { h.vy *= -1; h.y += h.vy * 2; }
+      });
+    }
+
+    function gameTick() {
+      if (!state.running) return;
+
+      state.direction = { ...state.nextDirection };
+
+      const head = {
+        x: state.snake[0].x + state.direction.x,
+        y: state.snake[0].y + state.direction.y,
+      };
+
+      if (head.x < 0 || head.y < 0 || head.x >= GRID || head.y >= GRID) {
+        loseLife('Oops! You hit the border. -1 life');
+        return;
+      }
+
+      const hitSelf = state.snake.some(seg => seg.x === head.x && seg.y === head.y);
+      if (hitSelf) {
+        loseLife('Uh-oh! You bumped into yourself. -1 life');
+        return;
+      }
+
+      const hitWall = state.walls.some(w => w.x === head.x && w.y === head.y);
+      if (hitWall) {
+        loseLife('Crash! Wall collision. -1 life');
+        return;
+      }
+
+      moveHazards();
+      const hitHazard = state.hazards.some(h => h.x === head.x && h.y === head.y);
+      if (hitHazard) {
+        loseLife('Yikes! Moving hazard hit. -1 life');
+        return;
+      }
+
+      state.snake.unshift(head);
+
+      if (head.x === state.food.x && head.y === state.food.y) {
+        state.collected += 1;
+        state.points += 20 + state.stageIndex * 5;
+        state.food = randomCell([...state.snake, ...state.walls, ...state.hazards]);
+
+        if (state.collected >= STAGES[state.stageIndex].target) {
+          updateUI();
+          draw();
+          nextStage();
+          return;
+        }
+      } else {
+        state.snake.pop();
+      }
+
+      updateUI();
+      draw();
+    }
+
+    function drawCell(pos, color, radius = 6) {
+      ctx.fillStyle = color;
+      const p = 2;
+      ctx.beginPath();
+      ctx.roundRect(pos.x * CELL + p, pos.y * CELL + p, CELL - p*2, CELL - p*2, radius);
+      ctx.fill();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (let y = 0; y < GRID; y++) {
+        for (let x = 0; x < GRID; x++) {
+          ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+          ctx.strokeRect(x * CELL, y * CELL, CELL, CELL);
+        }
+      }
+
+      drawCell(state.food, '#ffe66d', 12);
+
+      state.walls.forEach(w => drawCell(w, '#8d99ae', 4));
+      state.hazards.forEach(h => drawCell(h, '#ff5d73', 12));
+
+      state.snake.forEach((seg, i) => {
+        const grad = ctx.createLinearGradient(seg.x*CELL, seg.y*CELL, seg.x*CELL + CELL, seg.y*CELL + CELL);
+        grad.addColorStop(0, i === 0 ? '#00f5d4' : '#06d6a0');
+        grad.addColorStop(1, i === 0 ? '#48cae4' : '#90e0ef');
+        drawCell(seg, grad, i === 0 ? 10 : 6);
+      });
+    }
+
+    function updateUI() {
+      const stage = STAGES[state.stageIndex];
+      ui.points.textContent = state.points;
+      ui.stage.textContent = `${state.stageIndex + 1}/${STAGES.length}`;
+      ui.lives.textContent = state.lives;
+      ui.size.textContent = state.snake.length;
+      ui.taskText.textContent = `Eat ${stage.target} apples${stage.easy ? ' (Easy stage)' : ''}.`;
+      ui.taskProgress.textContent = `Progress: ${state.collected}/${stage.target}`;
+      ui.stageName.textContent = `Stage ${state.stageIndex + 1}: ${stage.name}`;
+      ui.progressBar.style.width = `${(state.collected / stage.target) * 100}%`;
+    }
+
+    function flash(msg, color = '') {
+      ui.message.textContent = msg;
+      ui.message.style.color = color || (msg.includes('Over') ? '#ff8fab' : '#7cff89');
+    }
+
+    function togglePlay() {
+      if (state.lives <= 0) return;
+      state.running = !state.running;
+      flash(state.running ? 'Let\'s go! Catch those apples! 🍎' : 'Game paused ⏸️');
+    }
+
+    document.addEventListener('keydown', (e) => {
+      const key = e.key.toLowerCase();
+      if (key === ' ') {
+        e.preventDefault();
+        togglePlay();
+        return;
+      }
+
+      const dirs = {
+        arrowup: { x: 0, y: -1 }, w: { x: 0, y: -1 },
+        arrowdown: { x: 0, y: 1 }, s: { x: 0, y: 1 },
+        arrowleft: { x: -1, y: 0 }, a: { x: -1, y: 0 },
+        arrowright: { x: 1, y: 0 }, d: { x: 1, y: 0 },
+      };
+
+      const d = dirs[key];
+      if (!d) return;
+
+      if (d.x === -state.direction.x && d.y === -state.direction.y) return;
+      state.nextDirection = d;
+    });
+
+    document.getElementById('startBtn').addEventListener('click', togglePlay);
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      state.points = 0;
+      state.lives = 3;
+      state.running = false;
+      setStage(0);
+      flash('Game reset! Press Start to play.');
+    });
+
+    function createSparkles() {
+      const wrap = document.getElementById('sparkles');
+      for (let i = 0; i < 30; i++) {
+        const s = document.createElement('div');
+        s.className = 'sparkle';
+        s.style.left = `${Math.random() * 100}vw`;
+        s.style.animationDelay = `${Math.random() * 8}s`;
+        s.style.opacity = `${Math.random() * 0.5 + 0.2}`;
+        s.style.transform = `scale(${Math.random() * 1.3})`;
+        wrap.appendChild(s);
+      }
+    }
+
+    createSparkles();
+    setStage(0);
+    draw();
+    flash('Welcome! First 3 stages are easy. Press Start to begin!');
+  </script>
+</body>
+</html>
